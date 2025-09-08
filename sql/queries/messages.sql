@@ -1,0 +1,12 @@
+-- name: CreateMessage :one
+INSERT INTO messages (id, created_at, updated_at, body, user_id)
+VALUES (
+    gen_random_uuid(),NOW(),NOW(),$1,$2
+)
+RETURNING *;
+
+-- name: GetMessages :many
+SELECT * FROM messages ORDER BY created_at ASC;
+
+-- name: GetMessage :one
+SELECT * FROM messages WHERE id = $1;

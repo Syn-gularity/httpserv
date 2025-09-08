@@ -25,13 +25,6 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	})
 }
 
-/*func (cfg *apiConfig) metricMaker(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	ret := fmt.Sprintf("Hits: %v", cfg.fileserverHits.Load())
-	w.Write([]byte(ret))
-}*/
-
 func (cfg *apiConfig) adminMetric(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
@@ -61,64 +54,6 @@ func health(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
 
-/*func chirpValidator(w http.ResponseWriter, r *http.Request){
-    type parameters struct {
-        // these tags indicate how the keys in the JSON should be mapped to the struct fields
-        // the struct fields must be exported (start with a capital letter) if you want them parsed
-        Msg string `json:"body"`
-    }
-	type returnMsg struct {
-		Valid bool `json:"valid"` 
-		CleanedBody string `json:"cleaned_body"`
-	}
-
-    decoder := json.NewDecoder(r.Body)
-    params := parameters{}
-    err := decoder.Decode(&params)
-    if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
-		return
-	}
-
-	if len(params.Msg) > 140{
-		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
-		return
-	} 
-	cleanedMsg := badWordDisplacer(params.Msg)
-	respondWithJSON(w, http.StatusOK, returnMsg{
-		Valid: true,
-		CleanedBody: cleanedMsg,
-	})
-}
-
-func badWordDisplacer(text string) string{
-	ret := ""
-	const displacer = "****"
-	var badWords = [3]string{"kerfuffle", "sharbert", "fornax"}
-	lowered := strings.ToLower(text)
-	splitText := strings.Split(lowered," ")
-	splitTextOriginal := strings.Split(text," ")
-	for idx, word := range splitText{
-		bad := false
-		for _, badWord := range badWords{
-			if word == badWord{
-				bad = true
-			}
-		}
-		if bad {
-			apnd := fmt.Sprintf(" %s", displacer)
-			ret += apnd
-		} else {
-			apnd := fmt.Sprintf(" %s", splitTextOriginal[idx])
-			ret += apnd
-		}
-	}
-	ret = strings.TrimSpace(ret)
-	return ret
-}*/
-
-
-
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
@@ -141,9 +76,10 @@ func main() {
 	mux.HandleFunc("POST /admin/reset", apiCfg.metricReset)
 
 	mux.HandleFunc("GET /api/healthz", health)
-	//mux.HandleFunc("POST /api/validate_chirp", chirpValidator)
-	mux.HandleFunc("POST /api/chirps", apiCfg.handleChirps)
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlePostChirps)
+	mux.HandleFunc("GET /api/chirps", apiCfg.handleGetChirps)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handleGetChirp)
 
 	var srv http.Server
 	srv.Handler = mux
